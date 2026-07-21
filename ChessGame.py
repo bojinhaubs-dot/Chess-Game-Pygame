@@ -80,6 +80,7 @@ def main():
                                 playerClicks = []
                         if not moveMade:                                                            # if invalid, make the end as start position
                             playerClicks = [sqSelected]
+            
             # listen to keyboard
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:
@@ -111,7 +112,7 @@ def main():
                 drawText(screen, 'White wins by checkmate')
         elif gs.staleMate:
             gameOver =True
-            drawText(screen, 'Stalemate');
+            drawText(screen, 'Stalemate')
         clock.tick(MAX_FPS) # restrain refreshing rate
         p.display.flip() # update
 
@@ -161,19 +162,19 @@ def animatedMoves(move, screen, board, clock):
     # render by frame staticly
     for frame in range(frameCount + 1):
         r,c =((move.startRow + dR*frame/frameCount, move.startCol + dC*frame/frameCount))
-        # render the base
+        # 1. render the base
         drawBoard(screen)
         drawPieces(screen, board)
-        # make a cover square
+        # 2. make a cover square additionally, because moved piece is already there
         color = colors[(move.endRow + move.endCol)%2]
         endSquare = p.Rect(move.endCol*SQ_SIZE, move.endRow*SQ_SIZE, SQ_SIZE, SQ_SIZE)
         p.draw.rect(screen, color, endSquare)
-        # render captured piece
+        # 3. render captured piece additionally, because it's already diminished 
         if move.pieceCaptured != "--":
             screen.blit(IMAGES[move.pieceCaptured], endSquare)
-        # render the moving piece
+        # 4. render the moving piece
         screen.blit(IMAGES[move.pieceMoved], p.Rect(c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
-        # update screen
+        # 5. update screen
         p.display.flip()
         clock.tick(60) # restrain refreshing rate
 
