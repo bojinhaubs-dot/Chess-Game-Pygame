@@ -8,9 +8,9 @@ class GameState:
                         ["--", "--", "--", "--", "--", "--", "--", "--"],
                         ["--", "--", "--", "--", "--", "--", "--", "--"],
                         ["--", "--", "--", "--", "--", "--", "--", "--"],
-                        ["--", "--", "--", "--", "--", "wB", "wN", "--"],
+                        ["--", "--", "--", "--", "--", "--", "--", "--"],
                         ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp"],
-                        ["wR", "wN", "wB", "wQ", "wK", "--", "--", "wR"]]
+                        ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]]
                 self.moveFunctions = {'p': self.getPawnMoves, 'R': self.getRookMoves, 'N': self.getKnightMoves,
                                       'B': self.getBishopMoves, 'Q': self.getQueenMoves, 'K': self.getKingMoves}
                 self.whiteToMove = True,
@@ -307,3 +307,35 @@ class Move():
         def getRankFile(self, r, c):
                 return  self.colsToFiles[c] + self.rowsToRanks[r]
 
+
+class Robot:
+        
+        pieceValues = {'p': 1, 'R': 5, 'N': 3, 'B': 3, 'Q': 9, '-': 0}
+        
+        def __init__(self):
+                self.moves = []
+                pass
+        
+        def loadmoves(self, moves: list[Move]):
+                self.moves = moves
+                pass
+        
+        def random_choice(self) -> Move:
+                import random
+                if len(self.moves) == 0:
+                        return None
+                i = random.randint(0, len(self.moves)-1)
+                return self.moves[i]
+        
+        def greedy_choice(self) -> Move:
+                if len(self.moves) == 0:
+                        return None
+                max_i = -1
+                max_val = 0
+                piece_val = 0
+                for i in range(len(self.moves)):
+                        piece_val = self.pieceValues[self.moves[i].pieceCaptured[1]]
+                        if piece_val > max_val:
+                                max_i = i
+                                max_val = piece_val
+                return self.moves[max_i] if max_i >= 0 else self.random_choice()

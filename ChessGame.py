@@ -1,5 +1,6 @@
 # import dependencies
 import pygame as p
+import time
 import ChessEngine
 
 # set global varieble
@@ -31,6 +32,7 @@ def main():
     # initiate primary logical object
     gs = ChessEngine.GameState()
     validMoves = gs.getValidMoves()
+    robot = ChessEngine.Robot()
     # initiate resources
     loadImages()
     # initiate scoop variebles
@@ -40,61 +42,74 @@ def main():
     sqSelected = ()
     playerClicks = []
     gameOver = False
+    isPlayer = True
     # initiate loop
     while running: 
-        # 1. User's action -> Change objects, variables, indicators
-        for e in p.event.get():
-            # listen to quit
-            if e.type == p.QUIT:
-                running = False
-            # listen to click
-            elif e.type == p.MOUSEBUTTONDOWN:
-                if not gameOver:
-                    # get click position
-                    location = p.mouse.get_pos()
-                    col = location[0]//SQ_SIZE
-                    row = location[1]//SQ_SIZE
-                    
-                    # check: cancle or move
-                    if sqSelected == (row, col): # if clicked in the same position, cancel selection
+        if isPlayer:
+            # 1. User's action -> Change objects, variables, indicators
+            for e in p.event.get():
+                # listen to quit
+                if e.type == p.QUIT:
+                    running = False
+                # listen to click
+                elif e.type == p.MOUSEBUTTONDOWN:
+                    if not gameOver:
+                        # get click position
+                        location = p.mouse.get_pos()
+                        col = location[0]//SQ_SIZE
+                        row = location[1]//SQ_SIZE
+                        
+                        # check: cancle or move
+                        if sqSelected == (row, col): # if clicked in the same position, cancel selection
+                            sqSelected = ()
+                            playerClicks = []
+                        else:                        # if clicked in new position, record selection
+                            sqSelected = (row, col) 
+                            playerClicks.append(sqSelected)
+
+                        # check: invalid start
+                        if len(playerClicks) == 1 and (gs.board[row][col] == "--"): # if start in an empty position, cancel collection
+                            sqSelected = ()
+                            playerClicks = []
+
+                        # check: valid move
+                        if len(playerClicks) == 2:                                  # if end in an new position, check if the move is valid  
+                            move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)        # if valid, register the move
+                            for i in range(len(validMoves)):
+                                if move == validMoves[i]:
+                                    gs.makeMove(move) # back-end
+                                    moveMade = True
+                                    animate = True
+                                    sqSelected = ()
+                                    playerClicks = []
+                            if not moveMade:                                                            # if invalid, make the end as start position
+                                playerClicks = [sqSelected]
+                # listen to keyboard
+                elif e.type == p.KEYDOWN:
+                    if e.key == p.K_z:
+                        gs.undoMove()
+                        moveMade = True
+                        animate = False #!
+                    if e.key == p.K_r:
+                        gs = ChessEngine.GameState()
+                        validMoves = gs.getValidMoves()
                         sqSelected = ()
                         playerClicks = []
-                    else:                        # if clicked in new position, record selection
-                        sqSelected = (row, col) 
-                        playerClicks.append(sqSelected)
-
-                    # check: invalid start
-                    if len(playerClicks) == 1 and (gs.board[row][col] == "--"): # if start in an empty position, cancel collection
-                        sqSelected = ()
-                        playerClicks = []
-
-                    # check: valid move
-                    if len(playerClicks) == 2:                                  # if end in an new position, check if the move is valid  
-                        move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)        # if valid, register the move
-                        for i in range(len(validMoves)):
-                            if move == validMoves[i]:
-                                gs.makeMove(move) # back-end
-                                moveMade = True
-                                animate = True
-                                sqSelected = ()
-                                playerClicks = []
-                        if not moveMade:                                                            # if invalid, make the end as start position
-                            playerClicks = [sqSelected]
-            
-            # listen to keyboard
-            elif e.type == p.KEYDOWN:
-                if e.key == p.K_z:
-                    gs.undoMove()
-                    moveMade = True
-                    animate = False #!
-                if e.key == p.K_r:
-                    gs = ChessEngine.GameState()
-                    validMoves = gs.getValidMoves()
-                    sqSelected = ()
-                    playerClicks = []
-                    moveMade = False
-                    animate = False
-        
+                        moveMade = False
+                        animate = False
+                        
+        if not isPlayer:
+                # robot load valid moves
+                if len(validMoves):
+                    robot.loadmoves(validMoves)
+                    # robot choose valid move
+                    move = robot.greedy_choice()
+                    # robot play
+                    if move:
+                        gs.makeMove(move) # back-end
+                        moveMade = True
+                        animate = True
+                
         # 2. render according to changes
         if moveMade:
             if animate:
@@ -103,6 +118,7 @@ def main():
             validMoves = gs.getValidMoves()
             moveMade = False
             animate = False
+            isPlayer = not isPlayer
         drawGameState(screen, gs, validMoves, sqSelected) # ??
         if gs.checkMate:
             gameOver = True
